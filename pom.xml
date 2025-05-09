@@ -71,8 +71,6 @@
     <module>hbase</module>
     <module>jdbc</module>
     <module>file</module>
-    <module>flink</module>
-    <module>flink-cmd</module>
     <module>influxdb</module>
     <module>python</module>
     <module>cassandra</module>
@@ -97,7 +95,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- language versions -->
-    <java.version>11</java.version>
+    <java.version>17</java.version>
     <!-- These two lines could be changed like `maven.compiler.release` after updating JDK11 -->
     <maven.compiler.source>${java.version}</maven.compiler.source>
     <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -657,7 +655,11 @@
           <configuration combine.children="append">
             <failIfNoTests>false</failIfNoTests>
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-            <argLine>-Xmx2g -Xms1g -Dfile.encoding=UTF-8</argLine>
+            <argLine>-Xmx2g -Xms1g -Dfile.encoding=UTF-8
+              --add-opens java.base/java.util=ALL-UNNAMED
+              --add-exports java.management/sun.management=ALL-UNNAMED
+            </argLine>
+
             <environmentVariables>
               <IS_ZEPPELIN_TEST>true</IS_ZEPPELIN_TEST>
             </environmentVariables>
@@ -665,6 +667,9 @@
               <exclude>${tests.to.exclude}</exclude>
             </excludes>
           </configuration>
+
+
+
           <!-- <excludes> <exclude>**/itest/**</exclude> </excludes> <executions>
             <execution> <id>surefire-itest</id> <phase>integration-test</phase> <goals>
             <goal>test</goal> </goals> <configuration> <excludes> <exclude>none</exclude>

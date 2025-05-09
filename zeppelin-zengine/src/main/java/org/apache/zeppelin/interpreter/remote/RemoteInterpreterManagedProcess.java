@@ -41,9 +41,9 @@ public abstract class RemoteInterpreterManagedProcess extends RemoteInterpreterP
   private final boolean isUserImpersonated;
   private String errorMessage;
 
-  private Map<String, String> env;
+  private final Map<String, String> env;
 
-  public RemoteInterpreterManagedProcess(
+  protected RemoteInterpreterManagedProcess(
       int intpEventServerPort,
       String intpEventServerHost,
       String interpreterPortRange,

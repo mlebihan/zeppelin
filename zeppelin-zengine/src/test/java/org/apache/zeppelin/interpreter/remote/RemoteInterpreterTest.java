@@ -32,7 +32,9 @@ import org.apache.zeppelin.interpreter.InterpreterOption;
 import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterResult.Code;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
+import org.apache.zeppelin.interpreter.util.ProcessLauncher;
 import org.apache.zeppelin.user.AuthenticationInfo;
+import org.apache.zeppelin.util.debug.PostMortem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -427,7 +429,7 @@ class RemoteInterpreterTest extends AbstractInterpreterTest {
         interpreter1.interpret("1", context1);
         fail("Should not be able to launch interpreter process");
       } catch (InterpreterException e) {
-        assertTrue(ExceptionUtils.getStackTrace(e).contains("invalid_command:"));
+        assertEquals(ProcessLauncher.ERROR_STATUS_COMMAND_NOT_FOUND, PostMortem.currentError().interpretedExitCode(), "Command should not be found");
       }
     } finally {
       System.clearProperty(ZeppelinConfiguration.ConfVars.ZEPPELIN_INTERPRETER_REMOTE_RUNNER.getVarName());
@@ -448,7 +450,7 @@ class RemoteInterpreterTest extends AbstractInterpreterTest {
         interpreter1.interpret("1", context1);
         fail("Should not be able to launch interpreter process");
       } catch (InterpreterException e) {
-        assertTrue(ExceptionUtils.getStackTrace(e).contains("Interpreter Process creation is time out"));
+        assertEquals(ProcessLauncher.ERROR_STATUS_TIMEOUT, PostMortem.currentError().interpretedExitCode(), "Command should had timed out");
       }
     } finally {
       System.clearProperty(ZeppelinConfiguration.ConfVars.ZEPPELIN_INTERPRETER_REMOTE_RUNNER.getVarName());

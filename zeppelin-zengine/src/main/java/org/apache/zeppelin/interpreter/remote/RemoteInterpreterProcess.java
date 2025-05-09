@@ -38,13 +38,16 @@ public abstract class RemoteInterpreterProcess implements InterpreterClient, Aut
   private static final Logger LOGGER = LoggerFactory.getLogger(RemoteInterpreterProcess.class);
   private static final Gson GSON = new Gson();
 
-  private int connectTimeout;
+  /** Timeout in milliseconds */
+  private final int connectTimeout;
   protected String intpEventServerHost;
   protected int intpEventServerPort;
   private PooledRemoteClient<Client> remoteClient;
-  private String startTime;
 
-  public RemoteInterpreterProcess(int connectTimeout,
+  /** Start time in yyyy-MM-dd HH:mm:ss format */
+  private final String startTime;
+
+  protected RemoteInterpreterProcess(int connectTimeout,
                                   int connectionPoolSize,
                                   String intpEventServerHost,
                                   int intpEventServerPort) {

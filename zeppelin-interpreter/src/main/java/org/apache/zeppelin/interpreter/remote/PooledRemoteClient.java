@@ -17,6 +17,8 @@
 
 package org.apache.zeppelin.interpreter.remote;
 
+import java.util.Objects;
+
 import org.apache.commons.pool2.impl.DefaultEvictionPolicy;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -55,8 +57,18 @@ public class PooledRemoteClient<T extends TServiceClient> implements AutoCloseab
     this(supplier, 10);
   }
 
-  public synchronized T getClient() throws Exception {
-    return clientPool.borrowObject(5_000);
+  /**
+   * Get a client from the pool of clients
+   * @return Client
+   * @throws ApachePoolException if the bool wasn't able to deliver one
+   */
+  public synchronized T getClient() {
+    try {
+      return clientPool.borrowObject(5_000);
+    }
+    catch(Exception e) {
+      throw new ApachePoolException(e.getMessage(), e);
+    }
   }
 
   @Override
@@ -93,9 +105,19 @@ public class PooledRemoteClient<T extends TServiceClient> implements AutoCloseab
     }
   }
 
+  /**
+   * Call a remote function
+   * @param func Remote function
+   * @param <R> Remote function result class
+   * @return Remote function result or <code>null</code> if there's no client in the pool
+   * @throws RemoteFunctionCallFailedException if the remote function call has failed
+   */
   public <R> R callRemoteFunction(RemoteFunction<R, T> func) {
+    Objects.requireNonNull(func, "A remote function is required, it cannot be null");
+
     boolean broken = false;
-    String errorCause = null;
+    Exception originalCause = null;
+
     for (int i = 0;i < RETRY_COUNT; ++ i) {
       T client = null;
       broken = false;
@@ -107,12 +129,12 @@ public class PooledRemoteClient<T extends TServiceClient> implements AutoCloseab
       } catch (InterpreterRPCException e) {
         // zeppelin side exception, no need to retry
         broken = true;
-        errorCause = e.getErrorMessage();
+        originalCause = e;
         break;
-      } catch (Exception e1) {
+      } catch (RuntimeException | TException e1) {
         // thrift framework exception (maybe due to network issue), need to retry
         broken = true;
-        continue;
+        originalCause = e1;
       } finally {
         if (client != null) {
           releaseClient(client, broken);
@@ -120,7 +142,7 @@ public class PooledRemoteClient<T extends TServiceClient> implements AutoCloseab
       }
     }
     if (broken) {
-      throw new RuntimeException(errorCause);
+      throw new RemoteFunctionCallFailedException(originalCause.getMessage(), originalCause);
     }
     return null;
   }

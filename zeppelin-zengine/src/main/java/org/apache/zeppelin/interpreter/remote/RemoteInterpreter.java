@@ -198,27 +198,35 @@ public class RemoteInterpreter extends Interpreter {
 
     final FormType form = getFormType();
     RemoteInterpreterProcess interpreterProcess = null;
+
     try {
       interpreterProcess = getOrCreateInterpreterProcess();
     } catch (IOException e) {
       throw new InterpreterException(e);
     }
+
     if (!interpreterProcess.isRunning()) {
       return new InterpreterResult(InterpreterResult.Code.ERROR,
               "Interpreter process is not running\n" + interpreterProcess.getErrorMessage());
     }
+
     return interpreterProcess.callRemoteFunction(client -> {
           RemoteInterpreterResult remoteResult = client.interpret(
               sessionId, className, st, convert(context));
+
           Map<String, Object> remoteConfig = (Map<String, Object>) GSON.fromJson(
               remoteResult.getConfig(), new TypeToken<Map<String, Object>>() {
               }.getType());
+
           context.getConfig().clear();
+
           if (remoteConfig != null) {
             context.getConfig().putAll(remoteConfig);
           }
+
           GUI currentGUI = context.getGui();
           GUI currentNoteGUI = context.getNoteGui();
+
           if (form == FormType.NATIVE) {
             GUI remoteGui = GUI.fromJson(remoteResult.getGui());
             GUI remoteNoteGui = GUI.fromJson(remoteResult.getNoteGui());
@@ -227,20 +235,22 @@ public class RemoteInterpreter extends Interpreter {
             currentGUI.setForms(remoteGui.getForms());
             currentNoteGUI.setParams(remoteNoteGui.getParams());
             currentNoteGUI.setForms(remoteNoteGui.getForms());
-          } else if (form == FormType.SIMPLE) {
-            final Map<String, Input> currentForms = currentGUI.getForms();
-            final Map<String, Object> currentParams = currentGUI.getParams();
-            final GUI remoteGUI = GUI.fromJson(remoteResult.getGui());
-            final Map<String, Input> remoteForms = remoteGUI.getForms();
-            final Map<String, Object> remoteParams = remoteGUI.getParams();
-            currentForms.putAll(remoteForms);
-            currentParams.putAll(remoteParams);
+          }
+          else {
+            if (form == FormType.SIMPLE) {
+              final Map<String, Input> currentForms = currentGUI.getForms();
+              final Map<String, Object> currentParams = currentGUI.getParams();
+              final GUI remoteGUI = GUI.fromJson(remoteResult.getGui());
+              final Map<String, Input> remoteForms = remoteGUI.getForms();
+              final Map<String, Object> remoteParams = remoteGUI.getParams();
+              currentForms.putAll(remoteForms);
+              currentParams.putAll(remoteParams);
+            }
           }
 
           return convert(remoteResult);
         }
     );
-
   }
 
   @Override
